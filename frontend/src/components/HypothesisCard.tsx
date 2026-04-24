@@ -5,9 +5,10 @@ import { ExperimentList } from "./ExperimentList";
 
 interface Props {
   hypothesis: Hypothesis;
+  drugName: string;
 }
 
-export function HypothesisCard({ hypothesis: h }: Props) {
+export function HypothesisCard({ hypothesis: h, drugName }: Props) {
   return (
     <article className="hypothesis-card">
       <header className="card-header">
@@ -34,7 +35,11 @@ export function HypothesisCard({ hypothesis: h }: Props) {
 
       <details className="card-details" open>
         <summary>Suggested Experiments ({h.suggested_experiments.length})</summary>
-        <ExperimentList experiments={h.suggested_experiments} />
+        <ExperimentList
+          experiments={h.suggested_experiments}
+          drugName={drugName}
+          mechanism={h.mechanism}
+        />
       </details>
     </article>
   );

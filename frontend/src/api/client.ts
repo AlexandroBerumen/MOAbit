@@ -1,20 +1,24 @@
-import type { HypothesisRequest, HypothesisResponse } from "../types";
+import type { HypothesisRequest, HypothesisResponse, ProtocolRequest, ProtocolResponse } from "../types";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `HTTP ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}
+
 export const apiClient = {
-  async generateHypotheses(req: HypothesisRequest): Promise<HypothesisResponse> {
-    const res = await fetch(`${BASE_URL}/api/hypotheses`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(req),
-    });
+  generateHypotheses: (req: HypothesisRequest) =>
+    post<HypothesisResponse>("/api/hypotheses", req),
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error((err as { detail?: string }).detail ?? `HTTP ${res.status}`);
-    }
-
-    return res.json() as Promise<HypothesisResponse>;
-  },
+  generateProtocol: (req: ProtocolRequest) =>
+    post<ProtocolResponse>("/api/protocol", req),
 };

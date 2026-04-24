@@ -4,6 +4,7 @@ PMIDs and Reactome IDs are real and link to actual records.
 """
 
 from models.schemas import (
+    DrugOverview,
     Hypothesis,
     HypothesisResponse,
     PubMedAbstract,
@@ -13,6 +14,30 @@ from models.schemas import (
 
 DEMO_RESPONSE = HypothesisResponse(
     drug_name="[DEMO] imatinib",
+    llm_provider="demo",
+    drug_overview=DrugOverview(
+        summary=(
+            "Imatinib (Gleevec) is a selective tyrosine kinase inhibitor that competitively occupies "
+            "the ATP-binding pocket of BCR-ABL1, KIT, and PDGFR in their inactive conformations. "
+            "By blocking substrate phosphorylation, it shuts down downstream RAS/MAPK and PI3K/AKT "
+            "survival signaling, inducing G1 arrest and mitochondrial apoptosis in tumor cells."
+        ),
+        mermaid_diagram=(
+            "flowchart TD\n"
+            '  Imatinib["Imatinib"] --> BCRABL["BCR-ABL1 kinase"]\n'
+            '  Imatinib --> KIT["KIT receptor"]\n'
+            '  Imatinib --> PDGFR["PDGFR"]\n'
+            '  BCRABL --> RAS["RAS/MAPK pathway"]\n'
+            '  BCRABL --> PI3K["PI3K/AKT pathway"]\n'
+            '  BCRABL --> STAT5["JAK/STAT5 pathway"]\n'
+            '  RAS --> Proliferation["Cell proliferation"]\n'
+            '  PI3K --> Survival["Cell survival"]\n'
+            '  STAT5 --> Differentiation["Differentiation block"]\n'
+            '  Proliferation --> Arrest["G1 arrest / Apoptosis"]\n'
+            '  Survival --> Arrest\n'
+            '  Differentiation --> Arrest'
+        ),
+    ),
     hypotheses=[
         Hypothesis(
             id=1,

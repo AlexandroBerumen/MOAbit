@@ -11,6 +11,7 @@ export function InputForm({ onSubmit, isLoading }: Props) {
   const [target, setTarget] = useState("");
   const [context, setContext] = useState("");
   const [observations, setObservations] = useState("");
+  const [background, setBackground] = useState("");
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -20,17 +21,21 @@ export function InputForm({ onSubmit, isLoading }: Props) {
       target: target.trim() || undefined,
       context: context.trim() || undefined,
       observations: observations.trim() || undefined,
+      background: background.trim() || undefined,
     });
   }
 
   return (
     <form className="input-form" onSubmit={handleSubmit}>
       <div className="field required">
-        <label htmlFor="drug-name">Drug / Compound</label>
+        <label htmlFor="drug-name">
+          Therapeutic Agent
+          <span className="optional"> (small molecule, biologic, AAV vector, mRNA, cell therapy, clinical candidate…)</span>
+        </label>
         <input
           id="drug-name"
           type="text"
-          placeholder="e.g. imatinib, SB-431542, compound 12"
+          placeholder="e.g. imatinib, AAV9-SMN1, pembrolizumab, BNT111, CAR-T BCMA"
           value={drugName}
           onChange={(e) => setDrugName(e.target.value)}
           required
@@ -45,7 +50,7 @@ export function InputForm({ onSubmit, isLoading }: Props) {
         <input
           id="target"
           type="text"
-          placeholder="e.g. BCR-ABL1, TGFBR1, PI3K pathway"
+          placeholder="e.g. BCR-ABL1, SMN1, PD-1, capsid serotype AAV9"
           value={target}
           onChange={(e) => setTarget(e.target.value)}
           disabled={isLoading}
@@ -77,6 +82,23 @@ export function InputForm({ onSubmit, isLoading }: Props) {
           onChange={(e) => setObservations(e.target.value)}
           disabled={isLoading}
           rows={3}
+        />
+      </div>
+
+      <div className="field">
+        <label htmlFor="background">
+          Background & Prior Literature{" "}
+          <span className="optional">
+            (paste abstracts, IC50 data, known biology — anything that should inform the analysis)
+          </span>
+        </label>
+        <textarea
+          id="background"
+          placeholder={`e.g. "Smith et al. 2021 showed compound X inhibits EGFR at Kd = 12 nM via allosteric mechanism..."\n\nOr paste a full abstract. The more context you provide, the more focused the hypotheses.`}
+          value={background}
+          onChange={(e) => setBackground(e.target.value)}
+          disabled={isLoading}
+          rows={5}
         />
       </div>
 

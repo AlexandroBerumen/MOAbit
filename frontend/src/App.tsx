@@ -32,6 +32,9 @@ export default function App() {
         {state.status === "success" && (
           <HypothesisList
             hypotheses={state.data.hypotheses}
+            drugName={state.data.drug_name}
+            drugOverview={state.data.drug_overview}
+            llmProvider={state.data.llm_provider}
             disclaimer={state.data.disclaimer}
           />
         )}

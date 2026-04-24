@@ -166,6 +166,25 @@ button[type="submit"]:disabled {
   to { transform: rotate(360deg); }
 }
 
+/* ── Results meta ────────────────────────────────────────────────────────── */
+
+.results-meta {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.provider-badge {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 99px;
+  padding: 3px 10px;
+  letter-spacing: 0.01em;
+}
+
 /* ── Disclaimer ──────────────────────────────────────────────────────────── */
 
 .disclaimer {
@@ -182,6 +201,52 @@ button[type="submit"]:disabled {
   background: #eff6ff;
   border-color: #93c5fd;
   color: #1e3a5f;
+}
+
+/* ── Drug overview ───────────────────────────────────────────────────────── */
+
+.drug-overview {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.drug-overview-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+
+.drug-overview-summary {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.drug-overview-diagram {
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  overflow-x: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.drug-overview-diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.drug-overview-diagram-error {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 /* ── Hypothesis card ─────────────────────────────────────────────────────── */
@@ -384,37 +449,109 @@ button[type="submit"]:disabled {
 /* ── Experiment table ────────────────────────────────────────────────────── */
 
 .experiment-list {
-  padding: 16px 20px;
-  overflow-x: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.experiment-list table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+/* ── Experiment card ─────────────────────────────────────────────────────── */
+
+.exp-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.experiment-list th {
-  text-align: left;
-  padding: 7px 10px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-  border-bottom: 2px solid var(--border);
-  white-space: nowrap;
+.exp-card-functional_rescue {
+  border-left: 3px solid var(--rescue-text);
 }
 
-.experiment-list td {
-  padding: 10px 10px;
-  vertical-align: top;
+.exp-card-reproducibility {
+  border-left: 3px solid var(--repro-text);
+}
+
+.exp-card-mechanistic {
+  border-left: 3px solid var(--mech-text);
+}
+
+.exp-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f9fafb;
   border-bottom: 1px solid var(--border);
 }
 
-.tier-functional_rescue td {
-  background: rgba(219, 234, 254, 0.25);
+.exp-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+.exp-step {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.exp-card-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.exp-field {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.exp-field:last-child,
+.exp-field:nth-last-child(2):not(.exp-field-full) {
+  border-bottom: none;
+}
+
+.exp-field-full {
+  grid-column: 1 / -1;
+}
+
+.exp-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.exp-value {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.exp-assay {
+  font-weight: 500;
+}
+
+.exp-endpoint {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.exp-rationale {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.exp-protocol {
+  border-top: 1px solid var(--border);
+}
+
+/* ── Shared badges ───────────────────────────────────────────────────────── */
 
 .tier-badge {
   display: inline-block;
@@ -458,23 +595,153 @@ button[type="submit"]:disabled {
   color: var(--qual-text);
 }
 
-.endpoint {
-  font-family: ui-monospace, monospace;
-  font-size: 12px;
-}
+/* ── Protocol button & panel ─────────────────────────────────────────────── */
 
-.replicates {
+.protocol-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  background: transparent;
+  cursor: pointer;
   white-space: nowrap;
-  font-size: 12px;
+  transition: background 0.15s, color 0.15s;
 }
 
-.controls-list {
-  list-style: disc;
-  padding-left: 14px;
+.protocol-btn:hover:not(:disabled) {
+  background: var(--primary);
+  color: #fff;
+}
+
+.protocol-btn-active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.protocol-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+
+.protocol-panel {
+  padding: 20px 24px;
+}
+
+.protocol-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.protocol-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
   margin: 0;
 }
 
-.rationale {
+.protocol-duration {
+  font-size: 12px;
   color: var(--text-muted);
-  max-width: 240px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.protocol-overview {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+  line-height: 1.6;
+}
+
+.protocol-section {
+  margin-bottom: 16px;
+}
+
+.protocol-section h5 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+}
+
+.protocol-section p {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.protocol-materials {
+  list-style: disc;
+  padding-left: 18px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.8;
+}
+
+.protocol-steps {
+  padding-left: 20px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.protocol-step strong {
+  font-size: 13px;
+  color: var(--text);
+  display: block;
+}
+
+.protocol-step p {
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.protocol-troubleshooting {
+  list-style: disc;
+  padding-left: 18px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.8;
+}
+
+.protocol-safety {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+.protocol-safety h5 {
+  color: #78350f;
+}
+
+.protocol-safety p {
+  color: #78350f;
+}
+
+.protocol-loading {
+  padding: 16px 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.protocol-error {
+  padding: 16px 24px;
+  font-size: 13px;
+  color: #b91c1c;
 }

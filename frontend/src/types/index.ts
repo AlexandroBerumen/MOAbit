@@ -1,8 +1,42 @@
+export interface DrugOverview {
+  summary: string;
+  mermaid_diagram: string;
+}
+
+export interface ProtocolStep {
+  step_number: number;
+  title: string;
+  description: string;
+}
+
+export interface Protocol {
+  title: string;
+  overview: string;
+  duration: string;
+  materials: string[];
+  steps: ProtocolStep[];
+  expected_results: string;
+  troubleshooting: string[];
+  safety_notes: string;
+}
+
+export interface ProtocolRequest {
+  drug_name: string;
+  mechanism: string;
+  experiment: SuggestedExperiment;
+}
+
+export interface ProtocolResponse {
+  protocol: Protocol;
+  llm_provider: string;
+}
+
 export interface HypothesisRequest {
   drug_name: string;
   target?: string;
   context?: string;
   observations?: string;
+  background?: string;
 }
 
 export interface PubMedAbstract {
@@ -41,6 +75,8 @@ export interface Hypothesis {
 
 export interface HypothesisResponse {
   drug_name: string;
+  drug_overview?: DrugOverview;
   hypotheses: Hypothesis[];
+  llm_provider: string;
   disclaimer: string;
 }

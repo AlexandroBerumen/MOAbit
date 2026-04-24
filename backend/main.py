@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
 from routers.hypotheses import router as hypotheses_router
+from routers.protocol import router as protocol_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,6 +22,7 @@ if settings.demo_mode:
     logging.getLogger(__name__).warning("DEMO MODE — no Gemini API key. Using hardcoded responses.")
 
 app.include_router(hypotheses_router, prefix="/api")
+app.include_router(protocol_router, prefix="/api")
 
 
 @app.get("/health")
