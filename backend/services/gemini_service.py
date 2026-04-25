@@ -88,7 +88,18 @@ Return a JSON object with two keys: "drug_overview" and "hypotheses".
 
 "drug_overview":
   "summary": 2-4 sentences on what this agent does, its modality, target(s), and key downstream effects.
-  "mermaid_diagram": a flowchart TD showing agent→target(s)→affected pathways→biological effects. Use ONLY ASCII letters, numbers, and underscores for node IDs. Put all display text inside square-bracket labels. Do not use markdown fences, parentheses-style nodes, or edge labels.
+  "moa_graph": a structured network object for Cytoscape with:
+    "nodes": 4-10 items, each with
+      "id": ASCII letters, numbers, underscores only
+      "label": display label for the node
+      "kind": one of "agent", "target", "pathway", "process", "effect", "biomarker", "unknown"
+      "group": optional short grouping label like "Primary target" or "Phenotype"
+    "edges": connections between nodes, each with
+      "source": source node id
+      "target": target node id
+      "interaction": one of "binds", "inhibits", "activates", "modulates", "causes", "associated_with"
+      "evidence": one of "direct" or "inferred"
+  "mermaid_diagram": optional legacy fallback string. If included, use a simple flowchart TD with square-bracket labels only and no markdown fences.
 
 "hypotheses": array of 3-5 testable mechanistic hypotheses, ranked most-to-least plausible. Each:
   "mechanism": 2-4 sentences describing the proposed MOA appropriate to the modality (e.g. transduction, transgene expression, capsid tropism for AAV; receptor binding and internalization for biologics; target engagement for small molecules).

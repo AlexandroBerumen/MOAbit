@@ -52,7 +52,9 @@ async def _hypothesis_stream(request: HypothesisRequest) -> AsyncGenerator[str, 
 
     # Emit drug_overview immediately so the frontend has something to show (~5-8 s in)
     drug_overview_payload = None
-    if drug_overview_raw.get("summary") and drug_overview_raw.get("mermaid_diagram"):
+    if drug_overview_raw.get("summary") and (
+        drug_overview_raw.get("moa_graph") or drug_overview_raw.get("mermaid_diagram")
+    ):
         drug_overview_payload = drug_overview_raw
 
     yield _sse("drug_overview", {
@@ -121,7 +123,7 @@ async def _hypothesis_stream(request: HypothesisRequest) -> AsyncGenerator[str, 
                 logger.warning("Skipping malformed experiment: %s", exp)
 
         h = Hypothesis(
-            id=h_index + 1,  # stable index; frontend re-sorts by confidence_score
+            id=h_index + 1,  # stable rank from initial hypothesis generation order
             mechanism=hyp["mechanism"],
             confidence_score=synthesis.get("confidence_score", 5),
             reasoning=synthesis.get("reasoning", ""),

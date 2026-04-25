@@ -23,6 +23,13 @@ type Action =
   | { type: "DONE"; llm_provider: string }
   | { type: "ERROR"; message: string };
 
+function upsertHypothesis(hypotheses: Hypothesis[], incoming: Hypothesis): Hypothesis[] {
+  const next = hypotheses.filter((hypothesis) => hypothesis.id !== incoming.id);
+  next.push(incoming);
+  next.sort((a, b) => a.id - b.id);
+  return next;
+}
+
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case "SUBMIT":
@@ -39,7 +46,7 @@ function reducer(state: State, action: Action): State {
       };
     case "HYPOTHESIS":
       if (state.status !== "results") return state;
-      return { ...state, hypotheses: [...state.hypotheses, action.payload] };
+      return { ...state, hypotheses: upsertHypothesis(state.hypotheses, action.payload) };
     case "DONE":
       if (state.status !== "results") return state;
       return { ...state, llm_provider: action.llm_provider, complete: true };

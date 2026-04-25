@@ -3,9 +3,29 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 
+class MoAGraphNode(BaseModel):
+    id: str
+    label: str
+    kind: Literal["agent", "target", "pathway", "process", "effect", "biomarker", "unknown"] = "unknown"
+    group: str = ""
+
+
+class MoAGraphEdge(BaseModel):
+    source: str
+    target: str
+    interaction: Literal["binds", "inhibits", "activates", "modulates", "causes", "associated_with"] = "modulates"
+    evidence: Literal["direct", "inferred"] = "inferred"
+
+
+class MoAGraph(BaseModel):
+    nodes: list[MoAGraphNode]
+    edges: list[MoAGraphEdge]
+
+
 class DrugOverview(BaseModel):
     summary: str
-    mermaid_diagram: str
+    mermaid_diagram: str = ""
+    moa_graph: Optional[MoAGraph] = None
 
 
 class HypothesisRequest(BaseModel):

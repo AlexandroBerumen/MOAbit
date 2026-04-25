@@ -1,6 +1,26 @@
+export interface MoAGraphNode {
+  id: string;
+  label: string;
+  kind: "agent" | "target" | "pathway" | "process" | "effect" | "biomarker" | "unknown";
+  group?: string;
+}
+
+export interface MoAGraphEdge {
+  source: string;
+  target: string;
+  interaction: "binds" | "inhibits" | "activates" | "modulates" | "causes" | "associated_with";
+  evidence: "direct" | "inferred";
+}
+
+export interface MoAGraph {
+  nodes: MoAGraphNode[];
+  edges: MoAGraphEdge[];
+}
+
 export interface DrugOverview {
   summary: string;
-  mermaid_diagram: string;
+  mermaid_diagram?: string;
+  moa_graph?: MoAGraph | null;
 }
 
 export interface ProtocolStep {

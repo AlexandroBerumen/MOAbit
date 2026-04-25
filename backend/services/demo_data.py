@@ -22,6 +22,32 @@ DEMO_RESPONSE = HypothesisResponse(
             "By blocking substrate phosphorylation, it shuts down downstream RAS/MAPK and PI3K/AKT "
             "survival signaling, inducing G1 arrest and mitochondrial apoptosis in tumor cells."
         ),
+        moa_graph={
+            "nodes": [
+                {"id": "imatinib", "label": "Imatinib", "kind": "agent", "group": "Therapeutic"},
+                {"id": "bcr_abl1", "label": "BCR-ABL1 kinase", "kind": "target", "group": "Primary target"},
+                {"id": "kit", "label": "KIT receptor", "kind": "target", "group": "Off-target kinase"},
+                {"id": "pdgfr", "label": "PDGFR", "kind": "target", "group": "Off-target kinase"},
+                {"id": "ras_mapk", "label": "RAS/MAPK signaling", "kind": "pathway", "group": "Growth pathway"},
+                {"id": "pi3k_akt", "label": "PI3K/AKT signaling", "kind": "pathway", "group": "Survival pathway"},
+                {"id": "stat5", "label": "JAK/STAT5 signaling", "kind": "pathway", "group": "Transcriptional output"},
+                {"id": "proliferation", "label": "Cell proliferation", "kind": "effect", "group": "Phenotype"},
+                {"id": "survival", "label": "Cell survival", "kind": "effect", "group": "Phenotype"},
+                {"id": "arrest_apoptosis", "label": "G1 arrest and apoptosis", "kind": "effect", "group": "Outcome"},
+            ],
+            "edges": [
+                {"source": "imatinib", "target": "bcr_abl1", "interaction": "inhibits", "evidence": "direct"},
+                {"source": "imatinib", "target": "kit", "interaction": "inhibits", "evidence": "direct"},
+                {"source": "imatinib", "target": "pdgfr", "interaction": "inhibits", "evidence": "direct"},
+                {"source": "bcr_abl1", "target": "ras_mapk", "interaction": "activates", "evidence": "direct"},
+                {"source": "bcr_abl1", "target": "pi3k_akt", "interaction": "activates", "evidence": "direct"},
+                {"source": "bcr_abl1", "target": "stat5", "interaction": "activates", "evidence": "direct"},
+                {"source": "ras_mapk", "target": "proliferation", "interaction": "causes", "evidence": "inferred"},
+                {"source": "pi3k_akt", "target": "survival", "interaction": "causes", "evidence": "inferred"},
+                {"source": "proliferation", "target": "arrest_apoptosis", "interaction": "modulates", "evidence": "inferred"},
+                {"source": "survival", "target": "arrest_apoptosis", "interaction": "modulates", "evidence": "inferred"},
+            ],
+        },
         mermaid_diagram=(
             "flowchart TD\n"
             '  Imatinib["Imatinib"] --> BCRABL["BCR-ABL1 kinase"]\n'
