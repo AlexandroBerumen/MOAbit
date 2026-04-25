@@ -167,6 +167,10 @@ Experiment design rules:
 - Be specific about cell lines (not "cancer cells" — use "HEK293T", "K562", etc.)
 - Each experiment needs a positive AND a negative control
 - State the replicate plan
+- Each experiment must include 1-2 experiment-specific PMIDs in "supporting_pmids"
+- Only include a PMID in "supporting_pmids" if the title/abstract indicates that the paper actually used that assay, measurement, platform, or a very close experimental method
+- If no retrieved paper clearly supports the exact experiment design, return an empty list for that experiment rather than a weakly related paper
+- "supporting_pmids" for an experiment MUST only contain PMIDs present in the evidence above and should be unique across experiments when possible
 
 ---
 
@@ -189,7 +193,8 @@ Return ONLY a JSON array with {len(hypotheses)} objects, one per hypothesis, in 
         "cell_line": "<specific cell line or primary cell type>",
         "controls": ["<positive control>", "<negative control>"],
         "replicates": "<e.g. n=3 biological replicates, 3 technical each>",
-        "rationale": "<one sentence linking this experiment to the hypothesis>"
+        "rationale": "<one sentence linking this experiment to the hypothesis>",
+        "supporting_pmids": ["<1-2 PMID strings from the evidence above that specifically support this experiment>"]
       }}
     ]
   }}
@@ -406,6 +411,7 @@ def _build_protocol_prompt(
     experiment: dict,
     observations: str = "",
     prior_literature: str = "",
+    source_publications: Optional[list[dict]] = None,
 ) -> str:
     exp_str = "\n".join(f"  {k}: {v}" for k, v in experiment.items())
 
@@ -422,13 +428,25 @@ def _build_protocol_prompt(
             "If observations suggest resistance or an unexpected phenotype, address it in troubleshooting."
         )
 
+    source_block = ""
+    if source_publications:
+        source_lines = "\n\n".join(
+            f"PMID {publication['pmid']}: {publication['title']}"
+            for publication in source_publications
+        )
+        source_block = (
+            "\n\nSource publications that this protocol should be inspired by:\n"
+            f"{source_lines}\n\nUse these papers as the primary experimental precedent for assay structure, "
+            "readouts, and controls. Do not claim details that are unsupported by these sources."
+        )
+
     return f"""Write a detailed experimental protocol for the following assay.
 
 Therapeutic agent (small molecule, biologic, AAV vector, mRNA, cell therapy, or other): {drug_name}
 Hypothesis mechanism: {mechanism}
 
 Experiment details:
-{exp_str}{context_block}
+{exp_str}{context_block}{source_block}
 
 Return a single JSON object with EXACTLY this structure:
 {{
@@ -465,8 +483,16 @@ async def generate_protocol(
     experiment: dict,
     observations: str = "",
     prior_literature: str = "",
+    source_publications: Optional[list[dict]] = None,
 ) -> tuple[dict, str]:
-    prompt = _build_protocol_prompt(drug_name, mechanism, experiment, observations, prior_literature)
+    prompt = _build_protocol_prompt(
+        drug_name,
+        mechanism,
+        experiment,
+        observations,
+        prior_literature,
+        source_publications,
+    )
     text, provider = await _call_llm(_PROTOCOL_SYSTEM, prompt)
     result = _parse_json(text)
     if not isinstance(result, dict):
@@ -541,6 +567,10 @@ Design exactly 4 experiments in this order:
 
 Rules:
 - Prefer quantitative assays with units; specific cell lines; positive AND negative controls; replicate plan
+- Each experiment must include 1-2 experiment-specific PMIDs in "supporting_pmids"
+- Only include a PMID in "supporting_pmids" if the title/abstract indicates that the paper actually used that assay, measurement, platform, or a very close experimental method
+- If no retrieved paper clearly supports the exact experiment design, return an empty list for that experiment rather than a weakly related paper
+- "supporting_pmids" for an experiment MUST only contain PMIDs present in the evidence above and should be unique across experiments when possible
 
 Return ONLY a JSON object:
 {{
@@ -556,7 +586,8 @@ Return ONLY a JSON object:
       "cell_line": "<specific cell line or primary cell type>",
       "controls": ["<positive control>", "<negative control>"],
       "replicates": "<e.g. n=3 biological replicates, 3 technical each>",
-      "rationale": "<one sentence linking experiment to hypothesis>"
+      "rationale": "<one sentence linking experiment to hypothesis>",
+      "supporting_pmids": ["<1-2 PMID strings from the evidence above that specifically support this experiment>"]
     }}
   ]
 }}"""

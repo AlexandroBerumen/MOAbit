@@ -43,6 +43,12 @@ class PubMedAbstract(BaseModel):
     url: str
 
 
+class ProtocolSourcePublication(BaseModel):
+    pmid: str
+    title: str
+    url: str
+
+
 class ReactomePathway(BaseModel):
     pathway_id: str
     name: str
@@ -58,6 +64,7 @@ class SuggestedExperiment(BaseModel):
     controls: list[str]
     replicates: str
     rationale: str
+    supporting_pmids: list[str] = Field(default_factory=list)
 
 
 class Hypothesis(BaseModel):
@@ -85,6 +92,7 @@ class Protocol(BaseModel):
     expected_results: str
     troubleshooting: list[str]
     safety_notes: str
+    source_publications: list[ProtocolSourcePublication] = Field(default_factory=list)
 
 
 class ProtocolRequest(BaseModel):
@@ -93,11 +101,20 @@ class ProtocolRequest(BaseModel):
     experiment: SuggestedExperiment
     observations: str = ""
     prior_literature: str = ""
+    source_publications: list[ProtocolSourcePublication] = Field(default_factory=list)
 
 
 class ProtocolResponse(BaseModel):
     protocol: Protocol
     llm_provider: str = "unknown"
+
+
+class SavedProtocol(BaseModel):
+    experiment_index: int = Field(..., ge=0)
+    experiment: SuggestedExperiment
+    protocol: Protocol
+    observations: str = ""
+    prior_literature: str = ""
 
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
@@ -135,6 +152,7 @@ class UserResponse(BaseModel):
 class SaveRequest(BaseModel):
     drug_name: str = Field(..., max_length=200)
     hypothesis: Hypothesis
+    selected_protocols: list[SavedProtocol] = Field(default_factory=list)
 
 
 class PatchNotesRequest(BaseModel):
@@ -145,6 +163,7 @@ class SavedHypothesisResponse(BaseModel):
     id: int
     drug_name: str
     hypothesis: Hypothesis
+    selected_protocols: list[SavedProtocol] = Field(default_factory=list)
     notes: str
     created_at: datetime
 

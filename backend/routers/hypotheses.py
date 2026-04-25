@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import re
 from typing import AsyncGenerator
 
 from fastapi import APIRouter
@@ -25,6 +26,168 @@ _DISCLAIMER = (
     "Outputs have not undergone regulatory review and must not be used as "
     "the sole basis for clinical or regulatory decisions."
 )
+
+_GENERIC_EXPERIMENT_TOKENS = {
+    "assay",
+    "analysis",
+    "cells",
+    "cell",
+    "treated",
+    "treatment",
+    "control",
+    "controls",
+    "using",
+    "response",
+    "effect",
+    "effects",
+    "protein",
+    "signaling",
+    "pathway",
+    "vehicle",
+    "study",
+    "studies",
+    "human",
+    "primary",
+    "model",
+    "models",
+    "expression",
+    "activity",
+    "biological",
+    "technical",
+    "replicates",
+}
+
+_METHOD_SYNONYMS: dict[str, tuple[str, ...]] = {
+    "celltiter_glo": ("celltiter-glo", "celltiter glo", "cell titer glo"),
+    "viability": ("cell viability", "viability assay", "viability", "cytotoxicity"),
+    "flow_cytometry": ("flow cytometry", "flow-cytometric", "facs", "cytometry"),
+    "annexin_v": ("annexin v", "annexin-v", "apoptosis assay"),
+    "western_blot": ("western blot", "immunoblot", "blot analysis"),
+    "densitometry": ("densitometry", "band intensity"),
+    "cetsa": ("cellular thermal shift assay", "cetsa", "thermal shift assay"),
+    "crispr": ("crispr", "sgrna", "knockout", "knock-out", "gene editing"),
+    "kinomescan": ("kinomescan", "kinase panel", "kinome profiling"),
+    "nanobret": ("nanobret", "target engagement"),
+    "dose_response": ("dose-response", "dose response", "ic50", "ec50"),
+    "phosphorylation": ("phosphorylation", "phospho", "phosphorylated"),
+    "qpcr": ("qpcr", "quantitative pcr", "rt-pcr", "rt qpcr"),
+    "elisa": ("elisa", "enzyme-linked immunosorbent assay"),
+    "immunofluorescence": ("immunofluorescence", "if staining", "confocal microscopy"),
+}
+
+
+def _tokenize_experiment_text(text: str) -> list[str]:
+    return [
+        token
+        for token in re.sub(r"[^a-z0-9\s-]", " ", text.lower()).split()
+        if len(token) >= 4 and token not in _GENERIC_EXPERIMENT_TOKENS
+    ]
+
+
+def _normalize_text(text: str) -> str:
+    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s-]", " ", text.lower())).strip()
+
+
+def _method_groups_for_experiment(exp: dict) -> list[tuple[str, ...]]:
+    assay_and_endpoint = _normalize_text(" ".join([
+        exp.get("assay_type", ""),
+        exp.get("primary_endpoint", ""),
+    ]))
+    groups: list[tuple[str, ...]] = []
+
+    for key, synonyms in _METHOD_SYNONYMS.items():
+        trigger = key.replace("_", " ")
+        if trigger in assay_and_endpoint or any(term in assay_and_endpoint for term in synonyms):
+            groups.append(synonyms)
+
+    assay_tokens = [
+        token for token in _tokenize_experiment_text(exp.get("assay_type", ""))
+        if token not in {"quantitative", "qualitative"}
+    ]
+    if assay_tokens:
+        groups.append(tuple(sorted(set(assay_tokens))))
+
+    return groups
+
+
+def _cell_line_tokens(exp: dict) -> list[str]:
+    return [
+        token
+        for token in _tokenize_experiment_text(exp.get("cell_line", ""))
+        if token not in {"derived", "stimulation", "parental", "endogenous", "expression", "confirmed"}
+    ]
+
+
+def _publication_supports_experiment(exp: dict, publication: dict) -> tuple[bool, int]:
+    publication_text = _normalize_text(
+        f"{publication.get('title', '')} {publication.get('abstract', '')}"
+    )
+    method_groups = _method_groups_for_experiment(exp)
+    matched_method_groups = sum(
+        1 for group in method_groups if any(term in publication_text for term in group)
+    )
+
+    if matched_method_groups == 0:
+        return False, 0
+
+    endpoint_overlap = sum(
+        1 for token in _tokenize_experiment_text(exp.get("primary_endpoint", ""))
+        if token in publication_text
+    )
+    rationale_overlap = sum(
+        1 for token in _tokenize_experiment_text(exp.get("rationale", ""))
+        if token in publication_text
+    )
+    control_overlap = sum(
+        1 for token in _tokenize_experiment_text(" ".join(exp.get("controls", [])))
+        if token in publication_text
+    )
+    cell_match = any(token in publication_text for token in _cell_line_tokens(exp))
+
+    if not cell_match and (endpoint_overlap + rationale_overlap + control_overlap) < 2:
+        return False, 0
+
+    score = (
+        matched_method_groups * 4
+        + endpoint_overlap * 2
+        + rationale_overlap
+        + control_overlap
+        + (2 if cell_match else 0)
+    )
+    return True, score
+
+
+def _validated_experiment_pmids(experiments: list[dict], pubmed_data: list[dict]) -> list[dict]:
+    by_pmid = {str(publication["pmid"]): publication for publication in pubmed_data}
+    used_pmids: set[str] = set()
+    validated: list[dict] = []
+
+    for exp in experiments:
+        raw_pmids = [str(pmid) for pmid in exp.get("supporting_pmids", [])]
+        ranked_matches: list[tuple[int, str]] = []
+
+        for pmid in raw_pmids:
+            publication = by_pmid.get(pmid)
+            if publication is None:
+                continue
+            supports_experiment, score = _publication_supports_experiment(exp, publication)
+            if supports_experiment:
+                ranked_matches.append((score, pmid))
+
+        ranked_matches.sort(key=lambda item: (-item[0], item[1]))
+
+        unique_pmids: list[str] = []
+        for _, pmid in ranked_matches:
+            if pmid in used_pmids:
+                continue
+            unique_pmids.append(pmid)
+            used_pmids.add(pmid)
+            if len(unique_pmids) == 2:
+                break
+
+        validated.append({**exp, "supporting_pmids": unique_pmids})
+
+    return validated
 
 
 def _sse(event: str, data: object) -> str:
@@ -116,7 +279,11 @@ async def _hypothesis_stream(request: HypothesisRequest) -> AsyncGenerator[str, 
             for pw in reactome_data
         ]
         experiments: list[SuggestedExperiment] = []
-        for exp in synthesis.get("suggested_experiments", []):
+        validated_experiments = _validated_experiment_pmids(
+            synthesis.get("suggested_experiments", []),
+            pubmed_data,
+        )
+        for exp in validated_experiments:
             try:
                 experiments.append(SuggestedExperiment(**exp))
             except Exception:

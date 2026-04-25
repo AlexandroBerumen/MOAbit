@@ -29,6 +29,12 @@ export interface ProtocolStep {
   description: string;
 }
 
+export interface ProtocolSourcePublication {
+  pmid: string;
+  title: string;
+  url: string;
+}
+
 export interface Protocol {
   title: string;
   overview: string;
@@ -38,6 +44,7 @@ export interface Protocol {
   expected_results: string;
   troubleshooting: string[];
   safety_notes: string;
+  source_publications: ProtocolSourcePublication[];
 }
 
 export interface ProtocolRequest {
@@ -46,11 +53,20 @@ export interface ProtocolRequest {
   experiment: SuggestedExperiment;
   observations?: string;
   prior_literature?: string;
+  source_publications?: ProtocolSourcePublication[];
 }
 
 export interface ProtocolResponse {
   protocol: Protocol;
   llm_provider: string;
+}
+
+export interface SavedProtocol {
+  experiment_index: number;
+  experiment: SuggestedExperiment;
+  protocol: Protocol;
+  observations: string;
+  prior_literature: string;
 }
 
 export interface HypothesisRequest {
@@ -83,6 +99,7 @@ export interface SuggestedExperiment {
   controls: string[];
   replicates: string;
   rationale: string;
+  supporting_pmids: string[];
 }
 
 export interface Hypothesis {
@@ -151,6 +168,7 @@ export interface SavedHypothesis {
   id: number;
   drug_name: string;
   hypothesis: Hypothesis;
+  selected_protocols: SavedProtocol[];
   notes: string;
   created_at: string;
 }
@@ -158,6 +176,7 @@ export interface SavedHypothesis {
 export interface SaveRequest {
   drug_name: string;
   hypothesis: Hypothesis;
+  selected_protocols: SavedProtocol[];
 }
 
 export interface PatchNotesRequest {

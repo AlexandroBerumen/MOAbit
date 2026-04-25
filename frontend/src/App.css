@@ -624,6 +624,17 @@ button[type="submit"]:disabled {
   gap: 8px;
 }
 
+.exp-card-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.exp-save-btn {
+  padding: 6px 12px;
+  margin-left: 0;
+}
+
 .exp-step {
   font-size: 11px;
   font-weight: 700;
@@ -679,6 +690,27 @@ button[type="submit"]:disabled {
 .exp-rationale {
   color: var(--text-muted);
   font-size: 12px;
+}
+
+.exp-publications {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exp-publication-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+  background: color-mix(in srgb, var(--primary) 6%, white);
+  border-radius: 999px;
+  padding: 4px 9px;
+}
+
+.exp-publication-link:hover {
+  text-decoration: underline;
 }
 
 .exp-protocol {
@@ -755,6 +787,10 @@ button[type="submit"]:disabled {
 
 .protocol-generate-btn:hover {
   opacity: 0.88;
+}
+
+.protocol-generate-btn-selected {
+  background: #0f766e;
 }
 
 .protocol-cancel-btn {
@@ -1068,25 +1104,117 @@ button[type="submit"]:disabled {
 .saved-list {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
 }
 
-.saved-list-title {
+.saved-group-list {
+  display: grid;
+  gap: 18px;
+}
+
+.saved-therapeutic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.saved-therapeutic-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  text-decoration: none;
+  background:
+    radial-gradient(circle at top right, rgba(254, 240, 138, 0.35), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.05);
+}
+
+.saved-therapeutic-card:hover {
+  border-color: #c6d5e6;
+  transform: translateY(-1px);
+}
+
+.saved-therapeutic-card-top {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.saved-therapeutic-card-title {
+  margin: 0;
   font-size: 18px;
-  font-weight: 700;
-  color: var(--text);
-  margin: 0 0 8px;
+  line-height: 1.3;
+  color: #12253f;
+}
+
+.saved-therapeutic-card-count {
+  align-self: flex-start;
+  font-size: 12px;
+  color: #56687f;
+  border: 1px solid #d6e1ee;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.saved-therapeutic-preview {
+  display: grid;
+  gap: 10px;
+}
+
+.saved-therapeutic-fallback {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.saved-detail-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.saved-back-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.saved-back-link:hover {
+  text-decoration: underline;
+}
+
+.saved-detail-title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+  color: #12253f;
+}
+
+.saved-detail-meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
 }
 
 .saved-item {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
 }
 
 .saved-item-meta {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   padding: 8px 0;
   margin-bottom: 4px;
@@ -1094,8 +1222,106 @@ button[type="submit"]:disabled {
 
 .saved-item-info {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
+}
+
+.saved-item-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.saved-protocols {
+  margin: 0;
+  padding: 0;
+}
+
+.saved-protocols-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.saved-protocols-list {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.saved-protocol-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8fbff 0%, #fdfefe 100%);
+  padding: 12px 13px;
+}
+
+.saved-protocol-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.saved-protocol-step {
+  font-size: 12px;
+  font-weight: 700;
+  color: #49617d;
+}
+
+.saved-protocol-focus {
+  display: grid;
+  gap: 8px;
+}
+
+.saved-protocol-focus-block {
+  border-radius: 10px;
+  padding: 10px 11px;
+}
+
+.saved-protocol-focus-assay {
+  background: #eef6ff;
+  border: 1px solid #d5e7fb;
+}
+
+.saved-protocol-focus-endpoint {
+  background: #fff6e8;
+  border: 1px solid #f4d7a5;
+}
+
+.saved-protocol-focus-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5f7087;
+}
+
+.saved-protocol-focus-value {
+  display: block;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #11233d;
+}
+
+.saved-protocol-name {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.saved-protocol-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #5c6b7f;
 }
 
 .saved-drug-name {
@@ -1104,9 +1330,45 @@ button[type="submit"]:disabled {
   color: var(--text);
 }
 
-.saved-date {
+.saved-item-endpoint {
   font-size: 12px;
+  line-height: 1.5;
   color: var(--text-muted);
+}
+
+.saved-hypothesis-toggle {
+  border-top: 1px solid #edf2f7;
+  padding-top: 10px;
+}
+
+.saved-hypothesis-toggle summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.saved-hypothesis-toggle summary::-webkit-details-marker {
+  display: none;
+}
+
+.saved-hypothesis-toggle .hypothesis-card {
+  margin-top: 10px;
+}
+
+.saved-date {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #5b6c80;
+  background: #f4f8fc;
+  border: 1px solid #dce8f3;
+  border-radius: 999px;
+  padding: 4px 8px;
 }
 
 .delete-btn {
@@ -1155,4 +1417,19 @@ button[type="submit"]:disabled {
 .saved-notes-input:focus {
   outline: none;
   border-color: var(--primary);
+}
+
+@media (max-width: 700px) {
+  .saved-item-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .saved-therapeutic-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .saved-item-info {
+    flex-wrap: wrap;
+  }
 }

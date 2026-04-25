@@ -43,16 +43,28 @@ export function useAuth() {
 
   const login = useCallback(async (req: LoginRequest): Promise<void> => {
     dispatch({ type: "LOADING" });
-    const res = await apiClient.login(req);
-    storeToken(res.access_token);
-    dispatch({ type: "AUTHED", user: { id: res.user_id, email: res.email, name: res.name } });
+    try {
+      const res = await apiClient.login(req);
+      storeToken(res.access_token);
+      dispatch({ type: "AUTHED", user: { id: res.user_id, email: res.email, name: res.name } });
+    } catch (error) {
+      clearToken();
+      dispatch({ type: "UNAUTHED" });
+      throw error;
+    }
   }, []);
 
   const register = useCallback(async (req: RegisterRequest): Promise<void> => {
     dispatch({ type: "LOADING" });
-    const res = await apiClient.register(req);
-    storeToken(res.access_token);
-    dispatch({ type: "AUTHED", user: { id: res.user_id, email: res.email, name: res.name } });
+    try {
+      const res = await apiClient.register(req);
+      storeToken(res.access_token);
+      dispatch({ type: "AUTHED", user: { id: res.user_id, email: res.email, name: res.name } });
+    } catch (error) {
+      clearToken();
+      dispatch({ type: "UNAUTHED" });
+      throw error;
+    }
   }, []);
 
   const logout = useCallback((): void => {

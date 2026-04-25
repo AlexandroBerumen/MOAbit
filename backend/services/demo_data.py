@@ -128,6 +128,7 @@ DEMO_RESPONSE = HypothesisResponse(
                     controls=["Ponatinib 10 nM (positive control, active on T315I)", "DMSO vehicle (negative control)"],
                     replicates="n=3 biological replicates, duplicate wells each",
                     rationale="If imatinib acts solely via BCR-ABL1 ATP pocket occupancy, T315I cells should show >50-fold IC50 shift, directly proving the binding-dependent mechanism.",
+                    supporting_pmids=["41599389"],
                 ),
                 SuggestedExperiment(
                     tier="reproducibility",
@@ -138,6 +139,7 @@ DEMO_RESPONSE = HypothesisResponse(
                     controls=["Dasatinib 10 nM (positive, pan-BCR-ABL inhibitor)", "Unstimulated K562 (basal pCrkL)"],
                     replicates="n=3 biological replicates",
                     rationale="CrkL phosphorylation is a validated pharmacodynamic biomarker for BCR-ABL1 activity; orthogonal to viability assay.",
+                    supporting_pmids=["42001524"],
                 ),
                 SuggestedExperiment(
                     tier="mechanistic",
@@ -148,6 +150,7 @@ DEMO_RESPONSE = HypothesisResponse(
                     controls=["Vehicle DMSO (no shift expected)", "Imatinib 10 µM (maximal shift)"],
                     replicates="n=3 technical replicates per temperature point (8-point curve)",
                     rationale="CETSA directly measures target engagement in cells; confirms imatinib physically binds BCR-ABL1 at pharmacologically relevant concentrations.",
+                    supporting_pmids=["41599389"],
                 ),
                 SuggestedExperiment(
                     tier="mechanistic",
@@ -158,6 +161,7 @@ DEMO_RESPONSE = HypothesisResponse(
                     controls=["Staurosporine 1 µM (pan-apoptosis positive)", "Untreated K562 (baseline apoptosis)"],
                     replicates="n=3 biological replicates per time point",
                     rationale="Time-resolved apoptosis quantification distinguishes cytostatic from cytotoxic action and links kinase inhibition to the downstream cell death mechanism.",
+                    supporting_pmids=["42001524"],
                 ),
             ],
         ),
@@ -214,6 +218,7 @@ DEMO_RESPONSE = HypothesisResponse(
                     controls=["Anti-KIT neutralizing Ab (positive, blocks rescue)", "BSA vehicle (negative control for SCF)"],
                     replicates="n=3 biological replicates, SCF dose range 10–100 ng/mL",
                     rationale="If KIT co-activation contributes to resistance, exogenous SCF should rescue >20% viability in imatinib-treated cells; anti-KIT Ab should block this rescue.",
+                    supporting_pmids=["41570583"],
                 ),
                 SuggestedExperiment(
                     tier="reproducibility",

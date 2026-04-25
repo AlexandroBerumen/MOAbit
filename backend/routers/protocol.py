@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException
 
-from models.schemas import ProtocolRequest, ProtocolResponse, Protocol
+from models.schemas import ProtocolRequest, ProtocolResponse, Protocol, ProtocolSourcePublication
 from services import gemini_service
 
 logger = logging.getLogger(__name__)
@@ -18,6 +18,7 @@ async def generate_protocol(request: ProtocolRequest) -> ProtocolResponse:
             experiment=request.experiment.model_dump(),
             observations=request.observations,
             prior_literature=request.prior_literature,
+            source_publications=[publication.model_dump() for publication in request.source_publications],
         )
     except Exception as exc:
         logger.error("Protocol generation failed: %s", exc)
@@ -25,6 +26,10 @@ async def generate_protocol(request: ProtocolRequest) -> ProtocolResponse:
 
     try:
         protocol = Protocol(**raw)
+        protocol.source_publications = [
+            ProtocolSourcePublication.model_validate(publication)
+            for publication in request.source_publications
+        ]
     except Exception as exc:
         logger.error("Protocol schema validation failed: %s | raw: %s", exc, raw)
         raise HTTPException(status_code=502, detail="Protocol response was malformed.")

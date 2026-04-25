@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
-from core.database import Base, engine
+from core.database import Base, engine, ensure_saved_protocols_column
 from routers.auth import router as auth_router
 from routers.hypotheses import router as hypotheses_router
 from routers.protocol import router as protocol_router
@@ -43,6 +43,7 @@ app.include_router(saved_router, prefix="/api")
 def on_startup() -> None:
     import models.db_models  # noqa: F401 — registers ORM models with Base
     Base.metadata.create_all(bind=engine)
+    ensure_saved_protocols_column()
 
 
 @app.get("/health")

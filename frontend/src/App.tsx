@@ -69,6 +69,16 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/saved/:therapeuticSlug"
+          element={
+            <ProtectedRoute>
+              <main className="app-main">
+                <SavedList />
+              </main>
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </>
   );

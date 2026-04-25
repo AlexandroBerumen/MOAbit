@@ -29,6 +29,7 @@ class SavedHypothesis(Base):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     drug_name: Mapped[str] = mapped_column(String(200), nullable=False)
     hypothesis_json: Mapped[str] = mapped_column(Text, nullable=False)
+    selected_protocols_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
     notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)

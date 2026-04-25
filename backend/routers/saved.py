@@ -1,4 +1,5 @@
 import logging
+import json
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -6,7 +7,7 @@ from sqlalchemy.orm import Session
 from core.auth import get_current_user
 from core.database import get_db
 from models.db_models import SavedHypothesis, User
-from models.schemas import Hypothesis, PatchNotesRequest, SavedHypothesisResponse, SaveRequest
+from models.schemas import Hypothesis, PatchNotesRequest, SavedHypothesisResponse, SaveRequest, SavedProtocol
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/saved", tags=["saved"])
@@ -17,6 +18,10 @@ def _to_response(row: SavedHypothesis) -> SavedHypothesisResponse:
         id=row.id,
         drug_name=row.drug_name,
         hypothesis=Hypothesis.model_validate_json(row.hypothesis_json),
+        selected_protocols=[
+            SavedProtocol.model_validate(item)
+            for item in json.loads(row.selected_protocols_json or "[]")
+        ],
         notes=row.notes,
         created_at=row.created_at,
     )
@@ -32,6 +37,7 @@ def save_hypothesis(
         user_id=current_user.id,
         drug_name=req.drug_name,
         hypothesis_json=req.hypothesis.model_dump_json(),
+        selected_protocols_json=json.dumps([protocol.model_dump() for protocol in req.selected_protocols]),
         notes="",
     )
     db.add(row)
