@@ -16,6 +16,8 @@ async def generate_protocol(request: ProtocolRequest) -> ProtocolResponse:
             drug_name=request.drug_name,
             mechanism=request.mechanism,
             experiment=request.experiment.model_dump(),
+            observations=request.observations,
+            prior_literature=request.prior_literature,
         )
     except Exception as exc:
         logger.error("Protocol generation failed: %s", exc)

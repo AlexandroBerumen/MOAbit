@@ -1,6 +1,7 @@
 import type { Hypothesis, DrugOverview as DrugOverviewType } from "../types";
 import { HypothesisCard } from "./HypothesisCard";
 import { DrugOverview } from "./DrugOverview";
+import { StreamingBanner } from "./StatusBanner";
 
 const PROVIDER_LABELS: Record<string, string> = {
   gemini: "Gemini 2.5 Flash",
@@ -14,9 +15,10 @@ interface Props {
   drugOverview?: DrugOverviewType;
   llmProvider: string;
   disclaimer: string;
+  streaming?: boolean;
 }
 
-export function HypothesisList({ hypotheses, drugName, drugOverview, llmProvider, disclaimer }: Props) {
+export function HypothesisList({ hypotheses, drugName, drugOverview, llmProvider, disclaimer, streaming }: Props) {
   const isDemo = disclaimer.startsWith("DEMO MODE");
   const providerLabel = PROVIDER_LABELS[llmProvider] ?? llmProvider;
 
@@ -36,9 +38,12 @@ export function HypothesisList({ hypotheses, drugName, drugOverview, llmProvider
         <strong>{isDemo ? "Demo mode:" : "Research use only:"}</strong>{" "}
         {disclaimer}
       </div>
+
       {hypotheses.map((h) => (
         <HypothesisCard key={h.id} hypothesis={h} drugName={drugName} />
       ))}
+
+      {streaming && <StreamingBanner count={hypotheses.length} />}
     </div>
   );
 }

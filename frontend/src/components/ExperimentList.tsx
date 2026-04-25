@@ -14,11 +14,60 @@ const TIER_LABEL: Record<SuggestedExperiment["tier"], string> = {
   mechanistic: "Mechanistic",
 };
 
-type ProtocolState =
+type CardState =
   | { status: "idle" }
-  | { status: "loading" }
-  | { status: "done"; protocol: Protocol }
-  | { status: "error"; message: string };
+  | { status: "form"; observations: string; prior_literature: string }
+  | { status: "loading"; observations: string; prior_literature: string }
+  | { status: "done"; protocol: Protocol; observations: string; prior_literature: string }
+  | { status: "error"; message: string; observations: string; prior_literature: string };
+
+function ProtocolForm({
+  initialObservations,
+  initialLiterature,
+  onGenerate,
+  onCancel,
+}: {
+  initialObservations: string;
+  initialLiterature: string;
+  onGenerate: (observations: string, prior_literature: string) => void;
+  onCancel: () => void;
+}) {
+  const [observations, setObservations] = useState(initialObservations);
+  const [literature, setLiterature] = useState(initialLiterature);
+
+  return (
+    <div className="protocol-form">
+      <div className="protocol-form-field">
+        <label className="protocol-form-label">Observations <span className="protocol-form-optional">(optional)</span></label>
+        <textarea
+          className="protocol-form-textarea"
+          rows={3}
+          placeholder="e.g. 40% reduction in cell viability at 1 µM; resistance emerging after 6 months of treatment"
+          value={observations}
+          onChange={(e) => setObservations(e.target.value)}
+        />
+      </div>
+      <div className="protocol-form-field">
+        <label className="protocol-form-label">Background &amp; Prior Literature <span className="protocol-form-optional">(optional)</span></label>
+        <textarea
+          className="protocol-form-textarea"
+          rows={4}
+          placeholder="Paste abstracts, IC50 data, known biology — anything that should inform the protocol"
+          value={literature}
+          onChange={(e) => setLiterature(e.target.value)}
+        />
+      </div>
+      <div className="protocol-form-actions">
+        <button className="protocol-generate-btn" type="button" onClick={() => onGenerate(observations, literature)}>
+          Generate Protocol
+        </button>
+        <button className="protocol-cancel-btn" type="button" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function ProtocolPanel({ protocol }: { protocol: Protocol }) {
   return (
@@ -81,23 +130,53 @@ function ExperimentCard({
   drugName: string;
   mechanism: string;
 }) {
-  const [state, setState] = useState<ProtocolState>({ status: "idle" });
-  const [open, setOpen] = useState(false);
+  const [state, setState] = useState<CardState>({ status: "idle" });
+  const [panelOpen, setPanelOpen] = useState(false);
 
-  async function handleProtocol() {
-    if (state.status === "done") {
-      setOpen((o) => !o);
+  function handleProtocolBtn() {
+    if (state.status === "idle") {
+      setState({ status: "form", observations: "", prior_literature: "" });
+      setPanelOpen(true);
       return;
     }
-    setOpen(true);
-    setState({ status: "loading" });
+    if (state.status === "form") {
+      setState({ status: "idle" });
+      setPanelOpen(false);
+      return;
+    }
+    // done/error/loading — toggle panel visibility
+    setPanelOpen((o) => !o);
+  }
+
+  async function handleGenerate(observations: string, prior_literature: string) {
+    setState({ status: "loading", observations, prior_literature });
     try {
-      const res = await apiClient.generateProtocol({ drug_name: drugName, mechanism, experiment: exp });
-      setState({ status: "done", protocol: res.protocol });
+      const res = await apiClient.generateProtocol({
+        drug_name: drugName,
+        mechanism,
+        experiment: exp,
+        observations,
+        prior_literature,
+      });
+      setState({ status: "done", protocol: res.protocol, observations, prior_literature });
     } catch (err) {
-      setState({ status: "error", message: (err as Error).message });
+      setState({ status: "error", message: (err as Error).message, observations, prior_literature });
     }
   }
+
+  function handleRegenerate() {
+    const obs = state.status !== "idle" && state.status !== "form" ? state.observations : "";
+    const lit = state.status !== "idle" && state.status !== "form" ? state.prior_literature : "";
+    setState({ status: "form", observations: obs, prior_literature: lit });
+    setPanelOpen(true);
+  }
+
+  const btnLabel = (() => {
+    if (state.status === "loading") return "Generating…";
+    if (state.status === "form") return "Cancel";
+    if (panelOpen) return "Hide Protocol";
+    return "Protocol";
+  })();
 
   return (
     <div className={`exp-card exp-card-${exp.tier}`}>
@@ -112,11 +191,11 @@ function ExperimentCard({
           </span>
         </div>
         <button
-          className={`protocol-btn ${open ? "protocol-btn-active" : ""}`}
-          onClick={handleProtocol}
+          className={`protocol-btn ${panelOpen ? "protocol-btn-active" : ""}`}
+          onClick={handleProtocolBtn}
           disabled={state.status === "loading"}
         >
-          {state.status === "loading" ? "Generating…" : open ? "Hide Protocol" : "Protocol"}
+          {btnLabel}
         </button>
       </div>
 
@@ -149,15 +228,33 @@ function ExperimentCard({
         </div>
       </div>
 
-      {open && (
+      {panelOpen && (
         <div className="exp-protocol">
+          {state.status === "form" && (
+            <ProtocolForm
+              initialObservations={state.observations}
+              initialLiterature={state.prior_literature}
+              onGenerate={handleGenerate}
+              onCancel={() => { setState({ status: "idle" }); setPanelOpen(false); }}
+            />
+          )}
           {state.status === "loading" && (
             <div className="protocol-loading">Generating protocol…</div>
           )}
           {state.status === "error" && (
-            <div className="protocol-error">{state.message}</div>
+            <>
+              <div className="protocol-error">{state.message}</div>
+              <button className="protocol-cancel-btn" type="button" onClick={handleRegenerate}>Try again</button>
+            </>
           )}
-          {state.status === "done" && <ProtocolPanel protocol={state.protocol} />}
+          {state.status === "done" && (
+            <>
+              <ProtocolPanel protocol={state.protocol} />
+              <button className="protocol-cancel-btn protocol-regenerate-btn" type="button" onClick={handleRegenerate}>
+                Regenerate with different context
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

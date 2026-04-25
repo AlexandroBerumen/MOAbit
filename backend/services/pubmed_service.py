@@ -3,15 +3,30 @@ import xml.etree.ElementTree as ET
 
 import httpx
 
+from core.config import settings
+
 ESEARCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 
-# PubMed allows 3 req/sec without an API key, 10/sec with one.
-# This semaphore caps concurrent requests to avoid 429s.
-_pubmed_sem = asyncio.Semaphore(2)
+# 3 req/s without API key, 10 req/s with one (NCBI policy).
+_pubmed_sem: asyncio.Semaphore | None = None
 
 
-async def search_and_fetch(queries: list[str], max_per_query: int = 3) -> list[dict]:
+def _sem() -> asyncio.Semaphore:
+    global _pubmed_sem
+    if _pubmed_sem is None:
+        limit = 8 if settings.ncbi_api_key else 3
+        _pubmed_sem = asyncio.Semaphore(limit)
+    return _pubmed_sem
+
+
+def _add_key(params: dict) -> dict:
+    if settings.ncbi_api_key:
+        params = {**params, "api_key": settings.ncbi_api_key}
+    return params
+
+
+async def search_and_fetch(queries: list[str], max_per_query: int = 2) -> list[dict]:
     """ESearch each query for PMIDs, then EFetch all abstracts in one request."""
     async with httpx.AsyncClient(timeout=20.0) as client:
         search_tasks = [_esearch(client, q, max_per_query) for q in queries]
@@ -31,20 +46,20 @@ async def search_and_fetch(queries: list[str], max_per_query: int = 3) -> list[d
 
 
 async def _esearch(client: httpx.AsyncClient, query: str, retmax: int) -> list[str]:
-    async with _pubmed_sem:
-        params = {"db": "pubmed", "term": query, "retmax": retmax, "retmode": "json"}
+    async with _sem():
+        params = _add_key({"db": "pubmed", "term": query, "retmax": retmax, "retmode": "json"})
         r = await _get_with_retry(client, ESEARCH_URL, params)
         return r.json()["esearchresult"]["idlist"]
 
 
 async def _efetch(client: httpx.AsyncClient, pmids: list[str]) -> list[dict]:
-    async with _pubmed_sem:
-        params = {
+    async with _sem():
+        params = _add_key({
             "db": "pubmed",
             "id": ",".join(pmids),
             "rettype": "xml",
             "retmode": "xml",
-        }
+        })
         r = await _get_with_retry(client, EFETCH_URL, params)
         return _parse_xml(r.text)
 
@@ -55,12 +70,10 @@ async def _get_with_retry(
     params: dict,
     max_retries: int = 3,
 ) -> httpx.Response:
-    """GET with exponential backoff on 429."""
     for attempt in range(max_retries):
         r = await client.get(url, params=params)
         if r.status_code == 429:
-            wait = 2 ** attempt  # 1s, 2s, 4s
-            await asyncio.sleep(wait)
+            await asyncio.sleep(2 ** attempt)
             continue
         r.raise_for_status()
         return r

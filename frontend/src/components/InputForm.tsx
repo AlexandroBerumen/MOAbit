@@ -10,8 +10,6 @@ export function InputForm({ onSubmit, isLoading }: Props) {
   const [drugName, setDrugName] = useState("");
   const [target, setTarget] = useState("");
   const [context, setContext] = useState("");
-  const [observations, setObservations] = useState("");
-  const [background, setBackground] = useState("");
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -20,8 +18,6 @@ export function InputForm({ onSubmit, isLoading }: Props) {
       drug_name: drugName.trim(),
       target: target.trim() || undefined,
       context: context.trim() || undefined,
-      observations: observations.trim() || undefined,
-      background: background.trim() || undefined,
     });
   }
 
@@ -59,44 +55,13 @@ export function InputForm({ onSubmit, isLoading }: Props) {
 
       <div className="field">
         <label htmlFor="context">
-          Experimental Context <span className="optional">(cell type, organism, disease, assay system)</span>
+          Additional Context <span className="optional">(optional)</span>
         </label>
-        <input
+        <textarea
           id="context"
-          type="text"
-          placeholder="e.g. K562 cells, primary mouse hepatocytes, xenograft model"
+          placeholder={`Cell type, organism, disease model, assay system — e.g. K562 cells, xenograft model\nObservations — e.g. 40% reduction in cell viability at 1 µM; resistance after 6 months\nPrior literature — paste abstracts, IC50 data, known biology`}
           value={context}
           onChange={(e) => setContext(e.target.value)}
-          disabled={isLoading}
-        />
-      </div>
-
-      <div className="field">
-        <label htmlFor="observations">
-          Observations <span className="optional">(what do you see in your assay?)</span>
-        </label>
-        <textarea
-          id="observations"
-          placeholder="e.g. 40% reduction in cell viability at 1 µM; resistance emerging after 6 months of treatment"
-          value={observations}
-          onChange={(e) => setObservations(e.target.value)}
-          disabled={isLoading}
-          rows={3}
-        />
-      </div>
-
-      <div className="field">
-        <label htmlFor="background">
-          Background & Prior Literature{" "}
-          <span className="optional">
-            (paste abstracts, IC50 data, known biology — anything that should inform the analysis)
-          </span>
-        </label>
-        <textarea
-          id="background"
-          placeholder={`e.g. "Smith et al. 2021 showed compound X inhibits EGFR at Kd = 12 nM via allosteric mechanism..."\n\nOr paste a full abstract. The more context you provide, the more focused the hypotheses.`}
-          value={background}
-          onChange={(e) => setBackground(e.target.value)}
           disabled={isLoading}
           rows={5}
         />

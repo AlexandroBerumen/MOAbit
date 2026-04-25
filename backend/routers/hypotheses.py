@@ -1,31 +1,38 @@
 import asyncio
+import json
 import logging
+from typing import AsyncGenerator
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 
 from core.config import settings
 from models.schemas import (
     Hypothesis,
     HypothesisRequest,
-    HypothesisResponse,
     PubMedAbstract,
     ReactomePathway,
     SuggestedExperiment,
 )
-from services import gemini_service, pubmed_service, reactome_service, uniprot_service
+from services import gemini_service, pubmed_service, reactome_service
 from services.demo_data import DEMO_RESPONSE
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+_DISCLAIMER = (
+    "MOAbit generates AI-assisted hypotheses for research purposes only. "
+    "Outputs have not undergone regulatory review and must not be used as "
+    "the sole basis for clinical or regulatory decisions."
+)
 
-@router.post("/hypotheses", response_model=HypothesisResponse)
-async def generate_hypotheses(request: HypothesisRequest) -> HypothesisResponse:
-    if settings.demo_mode:
-        logger.info("Demo mode active — returning hardcoded response")
-        return DEMO_RESPONSE
 
-    # ── Step 1: LLM generates hypothesis skeletons + drug overview (1 call) ───
+def _sse(event: str, data: object) -> str:
+    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+
+async def _hypothesis_stream(request: HypothesisRequest) -> AsyncGenerator[str, None]:
+    # ── Step 1: LLM generates skeletons + drug overview ──────────────────────
     try:
         raw_hypotheses, drug_overview_raw, provider_gen = await gemini_service.generate_hypotheses(
             drug_name=request.drug_name,
@@ -36,61 +43,58 @@ async def generate_hypotheses(request: HypothesisRequest) -> HypothesisResponse:
         )
     except Exception as exc:
         logger.error("Hypothesis generation failed: %s", exc)
-        raise HTTPException(status_code=502, detail=f"Hypothesis generation failed: {exc}")
+        yield _sse("error", {"message": f"Hypothesis generation failed: {exc}"})
+        return
 
     if not raw_hypotheses:
-        raise HTTPException(status_code=502, detail="Gemini returned no hypotheses.")
+        yield _sse("error", {"message": "No hypotheses generated."})
+        return
 
-    # ── Step 2: Fetch external data for all hypotheses concurrently ───────────
-    # No Gemini calls here — just PubMed, UniProt, Reactome in parallel.
-    async def fetch_one(hyp: dict) -> dict:
-        results = await asyncio.gather(
+    # Emit drug_overview immediately so the frontend has something to show (~5-8 s in)
+    drug_overview_payload = None
+    if drug_overview_raw.get("summary") and drug_overview_raw.get("mermaid_diagram"):
+        drug_overview_payload = drug_overview_raw
+
+    yield _sse("drug_overview", {
+        "drug_name": request.drug_name,
+        "drug_overview": drug_overview_payload,
+        "llm_provider": provider_gen,
+        "disclaimer": _DISCLAIMER,
+    })
+
+    # ── Steps 2+3: fetch + synthesize each hypothesis independently ───────────
+    # All hypotheses run concurrently; results are streamed as each finishes.
+    result_queue: asyncio.Queue[tuple[str, object] | None] = asyncio.Queue()
+
+    async def process_one(hyp: dict, h_index: int) -> None:
+        # Fetch external data (PubMed + Reactome in parallel; UniProt dropped — unused)
+        fetch_results = await asyncio.gather(
             pubmed_service.search_and_fetch(hyp.get("pubmed_search_queries", []), max_per_query=2),
-            uniprot_service.fetch_protein_data(hyp.get("uniprot_gene_symbols", [])),
             reactome_service.fetch_pathways(hyp.get("reactome_search_terms", [])),
             return_exceptions=True,
         )
-        # Each service is independent — a PubMed 429 shouldn't kill Reactome data
-        pubmed_data  = results[0] if isinstance(results[0], list) else []
-        reactome_data = results[2] if isinstance(results[2], list) else []
-        if not isinstance(results[0], list):
-            logger.warning("PubMed fetch failed for '%s': %s", hyp["mechanism"][:60], results[0])
-        return {"mechanism": hyp["mechanism"], "pubmed_data": pubmed_data, "pathway_data": reactome_data}
+        pubmed_data = fetch_results[0] if isinstance(fetch_results[0], list) else []
+        reactome_data = fetch_results[1] if isinstance(fetch_results[1], list) else []
 
-    fetched = await asyncio.gather(
-        *[fetch_one(h) for h in raw_hypotheses],
-        return_exceptions=True,
-    )
+        if not isinstance(fetch_results[0], list):
+            logger.warning("PubMed fetch failed for hypothesis %d: %s", h_index, fetch_results[0])
 
-    enriched_inputs = [f for f in fetched if isinstance(f, dict)]
-    if not enriched_inputs:
-        raise HTTPException(status_code=502, detail="All external data fetches failed.")
+        # Synthesize this single hypothesis
+        try:
+            synthesis, provider_syn = await gemini_service.synthesize_one(
+                hypothesis={"mechanism": hyp["mechanism"], "pubmed_data": pubmed_data, "pathway_data": reactome_data},
+                drug_name=request.drug_name,
+                target=request.target,
+                context=request.context,
+            )
+        except Exception as exc:
+            logger.warning("Synthesis failed for hypothesis %d: %s", h_index, exc)
+            return
 
-    # ── Step 3: LLM scores ALL hypotheses in one call ────────────────────────
-    try:
-        syntheses, provider_syn = await gemini_service.synthesize_all(
-            hypotheses=enriched_inputs,
-            drug_name=request.drug_name,
-            target=request.target,
-            context=request.context,
-            background=request.background,
-        )
-    except Exception as exc:
-        logger.error("Batch synthesis failed: %s", exc)
-        raise HTTPException(status_code=502, detail=f"Synthesis failed: {exc}")
-
-    providers = sorted({provider_gen, provider_syn})
-    llm_provider = " + ".join(providers)
-
-    # ── Step 4: Assemble Hypothesis objects ───────────────────────────────────
-    valid: list[Hypothesis] = []
-    for enriched, synthesis in zip(enriched_inputs, syntheses):
-        # Normalize supporting_pmids to strings — Gemini sometimes returns ints
+        # Build Hypothesis object
         supporting_pmids = {str(p) for p in synthesis.get("supporting_pmids", [])}
-
-        # Filter to cited abstracts; fall back to all fetched if Gemini cited none
-        matched = [p for p in enriched["pubmed_data"] if p["pmid"] in supporting_pmids]
-        abstracts_to_show = matched if matched else enriched["pubmed_data"]
+        matched = [p for p in pubmed_data if p["pmid"] in supporting_pmids]
+        abstracts_to_show = matched if matched else pubmed_data
 
         abstracts = [
             PubMedAbstract(
@@ -101,51 +105,81 @@ async def generate_hypotheses(request: HypothesisRequest) -> HypothesisResponse:
             )
             for p in abstracts_to_show
         ]
-
         pathways = [
             ReactomePathway(
                 pathway_id=pw["id"],
                 name=pw["name"],
                 url=f"https://reactome.org/PathwayBrowser/#/{pw['id']}",
             )
-            for pw in enriched["pathway_data"]
+            for pw in reactome_data
         ]
-
-        experiments = []
+        experiments: list[SuggestedExperiment] = []
         for exp in synthesis.get("suggested_experiments", []):
             try:
                 experiments.append(SuggestedExperiment(**exp))
             except Exception:
                 logger.warning("Skipping malformed experiment: %s", exp)
 
-        valid.append(Hypothesis(
-            id=0,  # placeholder; reassigned after sort
-            mechanism=enriched["mechanism"],
+        h = Hypothesis(
+            id=h_index + 1,  # stable index; frontend re-sorts by confidence_score
+            mechanism=hyp["mechanism"],
             confidence_score=synthesis.get("confidence_score", 5),
             reasoning=synthesis.get("reasoning", ""),
             pubmed_abstracts=abstracts,
             reactome_pathways=pathways,
             suggested_experiments=experiments,
-        ))
+        )
+        await result_queue.put(("hypothesis", h.model_dump(), provider_syn))
 
-    valid.sort(key=lambda h: h.confidence_score, reverse=True)
-
-    # Reassign IDs after sort so they always run 1, 2, 3... regardless of which
-    # hypotheses succeeded or what order Gemini returned them in
-    for i, h in enumerate(valid):
-        h.id = i + 1
-
-    from models.schemas import DrugOverview
-    drug_overview = None
-    if drug_overview_raw.get("summary") and drug_overview_raw.get("mermaid_diagram"):
+    async def run_all() -> None:
         try:
-            drug_overview = DrugOverview(**drug_overview_raw)
-        except Exception:
-            logger.warning("Malformed drug_overview from LLM — skipping")
+            await asyncio.gather(
+                *[process_one(h, i) for i, h in enumerate(raw_hypotheses)],
+                return_exceptions=True,
+            )
+        finally:
+            await result_queue.put(None)  # sentinel — always sent even on error
 
-    return HypothesisResponse(
-        drug_name=request.drug_name,
-        drug_overview=drug_overview,
-        hypotheses=valid,
-        llm_provider=llm_provider,
+    asyncio.create_task(run_all())
+
+    providers: set[str] = {provider_gen}
+    while True:
+        item = await result_queue.get()
+        if item is None:
+            break
+        event_type, data, provider_syn = item
+        providers.add(provider_syn)
+        yield _sse(event_type, data)
+
+    yield _sse("done", {"llm_provider": " + ".join(sorted(providers))})
+
+
+async def _demo_stream() -> AsyncGenerator[str, None]:
+    data = DEMO_RESPONSE
+    yield _sse("drug_overview", {
+        "drug_name": data.drug_name,
+        "drug_overview": data.drug_overview.model_dump() if data.drug_overview else None,
+        "llm_provider": data.llm_provider,
+        "disclaimer": data.disclaimer,
+    })
+    for h in data.hypotheses:
+        yield _sse("hypothesis", h.model_dump())
+    yield _sse("done", {"llm_provider": data.llm_provider})
+
+
+@router.post("/hypotheses")
+async def generate_hypotheses(request: HypothesisRequest) -> StreamingResponse:
+    if settings.demo_mode:
+        logger.info("Demo mode — returning hardcoded response via SSE")
+        stream = _demo_stream()
+    else:
+        stream = _hypothesis_stream(request)
+
+    return StreamingResponse(
+        stream,
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
     )

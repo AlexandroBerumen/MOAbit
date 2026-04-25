@@ -14,6 +14,13 @@
   max-width: 900px;
   margin: 0 auto;
   padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-logo {
+  text-decoration: none;
 }
 
 .header-content h1 {
@@ -27,6 +34,44 @@
   color: var(--text-muted);
   font-size: 13px;
   margin-top: 2px;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  text-decoration: underline;
+}
+
+.nav-username {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.nav-btn {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.nav-btn:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
 }
 
 .app-main {
@@ -551,6 +596,98 @@ button[type="submit"]:disabled {
   border-top: 1px solid var(--border);
 }
 
+/* ── Protocol context form ───────────────────────────────────────────────── */
+
+.protocol-form {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.protocol-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.protocol-form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.protocol-form-optional {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.protocol-form-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface, #fff);
+  color: var(--text-primary, #111827);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.protocol-form-textarea:focus {
+  outline: none;
+  border-color: var(--accent, #6366f1);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #6366f1) 15%, transparent);
+}
+
+.protocol-form-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.protocol-generate-btn {
+  padding: 7px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent, #6366f1);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.protocol-generate-btn:hover {
+  opacity: 0.88;
+}
+
+.protocol-cancel-btn {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.protocol-cancel-btn:hover {
+  background: var(--surface-hover, #f3f4f6);
+}
+
+.protocol-regenerate-btn {
+  margin: 12px 16px 16px;
+}
+
 /* ── Shared badges ───────────────────────────────────────────────────────── */
 
 .tier-badge {
@@ -744,4 +881,189 @@ button[type="submit"]:disabled {
   padding: 16px 24px;
   font-size: 13px;
   color: #b91c1c;
+}
+
+/* ── Auth page ───────────────────────────────────────────────────────────── */
+
+.auth-page {
+  max-width: 440px;
+  margin: 48px auto 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px;
+}
+
+.auth-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 24px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-error {
+  font-size: 13px;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+.auth-toggle {
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* ── Save button (on HypothesisCard) ─────────────────────────────────────── */
+
+.save-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-left: auto;
+  transition: background 0.15s, color 0.15s;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: var(--primary);
+  color: #fff;
+}
+
+.save-btn-saved {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.save-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.save-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: auto;
+  cursor: default;
+}
+
+/* ── Saved hypotheses list ───────────────────────────────────────────────── */
+
+.saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.saved-list-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+.saved-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.saved-item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  margin-bottom: 4px;
+}
+
+.saved-item-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.saved-drug-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.saved-date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.delete-btn {
+  font-size: 12px;
+  font-weight: 500;
+  color: #b91c1c;
+  background: none;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background: #fef2f2;
+}
+
+.saved-notes {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.saved-notes-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.saved-notes-input {
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.saved-notes-input:focus {
+  outline: none;
+  border-color: var(--primary);
 }

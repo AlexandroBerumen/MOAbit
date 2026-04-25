@@ -16,7 +16,7 @@ export function StatusBanner({ status, message }: Props) {
     return (
       <div className="status-banner status-loading" role="status" aria-live="polite">
         <span className="spinner" aria-hidden="true" />
-        Fetching literature and generating hypotheses — this takes 20–40 seconds…
+        Analyzing drug and generating hypotheses…
       </div>
     );
   }
@@ -30,4 +30,15 @@ export function StatusBanner({ status, message }: Props) {
   }
 
   return null;
+}
+
+export function StreamingBanner({ count }: { count: number }) {
+  return (
+    <div className="status-banner status-loading" role="status" aria-live="polite">
+      <span className="spinner" aria-hidden="true" />
+      {count === 0
+        ? "Fetching literature and scoring hypotheses…"
+        : `Fetching literature… ${count} hypothesis${count === 1 ? "" : "es"} ready`}
+    </div>
+  );
 }

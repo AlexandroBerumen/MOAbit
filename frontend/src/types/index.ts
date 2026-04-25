@@ -24,6 +24,8 @@ export interface ProtocolRequest {
   drug_name: string;
   mechanism: string;
   experiment: SuggestedExperiment;
+  observations?: string;
+  prior_literature?: string;
 }
 
 export interface ProtocolResponse {
@@ -79,4 +81,65 @@ export interface HypothesisResponse {
   hypotheses: Hypothesis[];
   llm_provider: string;
   disclaimer: string;
+}
+
+// ── SSE events from POST /api/hypotheses ─────────────────────────────────────
+
+export interface DrugOverviewEvent {
+  drug_name: string;
+  drug_overview: DrugOverview | null;
+  llm_provider: string;
+  disclaimer: string;
+}
+
+export type SSEEvent =
+  | { event: "drug_overview"; data: DrugOverviewEvent }
+  | { event: "hypothesis"; data: Hypothesis }
+  | { event: "done"; data: { llm_provider: string } }
+  | { event: "error"; data: { message: string } };
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+  user_id: number;
+  email: string;
+  name: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  name: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+// ── Saved hypotheses ──────────────────────────────────────────────────────────
+
+export interface SavedHypothesis {
+  id: number;
+  drug_name: string;
+  hypothesis: Hypothesis;
+  notes: string;
+  created_at: string;
+}
+
+export interface SaveRequest {
+  drug_name: string;
+  hypothesis: Hypothesis;
+}
+
+export interface PatchNotesRequest {
+  notes: string;
 }

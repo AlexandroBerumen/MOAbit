@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
@@ -10,7 +11,7 @@ class DrugOverview(BaseModel):
 class HypothesisRequest(BaseModel):
     drug_name: str = Field(..., min_length=1, max_length=200)
     target: Optional[str] = Field(None, max_length=200)
-    context: Optional[str] = Field(None, max_length=500)
+    context: Optional[str] = Field(None, max_length=8000)
     observations: Optional[str] = Field(None, max_length=1000)
     background: Optional[str] = Field(None, max_length=8000)
 
@@ -70,11 +71,62 @@ class ProtocolRequest(BaseModel):
     drug_name: str
     mechanism: str
     experiment: SuggestedExperiment
+    observations: str = ""
+    prior_literature: str = ""
 
 
 class ProtocolResponse(BaseModel):
     protocol: Protocol
     llm_provider: str = "unknown"
+
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
+
+class RegisterRequest(BaseModel):
+    email: str = Field(..., max_length=254)
+    password: str = Field(..., min_length=8, max_length=128)
+    name: str = Field(..., min_length=1, max_length=120)
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user_id: int
+    email: str
+    name: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    name: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ── Saved hypotheses ──────────────────────────────────────────────────────────
+
+class SaveRequest(BaseModel):
+    drug_name: str = Field(..., max_length=200)
+    hypothesis: Hypothesis
+
+
+class PatchNotesRequest(BaseModel):
+    notes: str = Field(..., max_length=2000)
+
+
+class SavedHypothesisResponse(BaseModel):
+    id: int
+    drug_name: str
+    hypothesis: Hypothesis
+    notes: str
+    created_at: datetime
 
 
 class HypothesisResponse(BaseModel):
