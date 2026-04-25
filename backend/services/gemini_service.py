@@ -88,7 +88,7 @@ Return a JSON object with two keys: "drug_overview" and "hypotheses".
 
 "drug_overview":
   "summary": 2-4 sentences on what this agent does, its modality, target(s), and key downstream effects.
-  "mermaid_diagram": a flowchart TD showing agent→target(s)→affected pathways→biological effects. Use square brackets for node labels, no parentheses.
+  "mermaid_diagram": a flowchart TD showing agent→target(s)→affected pathways→biological effects. Use ONLY ASCII letters, numbers, and underscores for node IDs. Put all display text inside square-bracket labels. Do not use markdown fences, parentheses-style nodes, or edge labels.
 
 "hypotheses": array of 3-5 testable mechanistic hypotheses, ranked most-to-least plausible. Each:
   "mechanism": 2-4 sentences describing the proposed MOA appropriate to the modality (e.g. transduction, transgene expression, capsid tropism for AAV; receptor binding and internalization for biologics; target engagement for small molecules).
